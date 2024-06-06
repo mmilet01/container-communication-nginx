@@ -1,0 +1,65 @@
+version: "3"
+services:
+  frontend-part:
+    build:
+      context: ./frontend-part
+    ports:
+      - "3000:3000"
+    depends_on:
+      - express_server_two
+      - express_server_one
+    volumes:
+      - ./frontend-part:/app
+      - /app/node_modules
+
+  express_server_two:
+    build:
+      context: ./express_server_two
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis-srv
+    volumes:
+      - ./express_server_two:/app
+      - /app/node_modules
+
+  express_server_one:
+    build:
+      context: ./express_server_one
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis-srv
+      - postgres
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend-part
+      - express_server_two
+      - express_server_one
+
+  redis-srv:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    restart: on-failure
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: "postgres:13-alpine"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+volumes:
+  redis-data:
+  postgres-data:
